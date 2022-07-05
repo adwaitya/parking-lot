@@ -1,44 +1,59 @@
-import { useState } from 'react'
-import logo from './logo.svg'
-import './App.css'
+import { useCallback, useEffect, useState } from 'react'
+import { animated, useSpringRef, useTransition } from '@react-spring/web';
+
+import './App.scss'
+import { Landing } from './Pages/Landing'
+import Main from './Pages/Main/Main';
+
+const pages = [
+  ({ style, triggerTransition, setParkingSlotsCount }:any) => (
+    <animated.div style={{ ...style, background: "lightgreen" }}>
+      <Landing
+        triggerTransition={triggerTransition}
+        setParkingSlotsCount={setParkingSlotsCount}
+      />
+    </animated.div>
+  ),
+  ({ style, slotsCount }: any) => (
+    <animated.div style={{ ...style, background: "lightgray" }}>
+      <Main slotsCount={slotsCount} />
+    </animated.div>
+  ),
+];
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [parkingSlotsCount, setParkingSlotsCount] = useState(1);
+
+  const [index, set] = useState(0);
+  const onClick = useCallback(() => set((state) => (state + 1) % 2), []);
+  const transRef = useSpringRef();
+  const transitions = useTransition(index, {
+    ref: transRef,
+    keys: null,
+    from: { opacity: 0, transform: "translate3d(100%,0,0)" },
+    enter: { opacity: 1, transform: "translate3d(0%,0,0)" },
+    leave: { opacity: 0, transform: "translate3d(-50%,0,0)" },
+  });
+
+  useEffect(() => {
+    transRef.start();
+  }, [index]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>Hello Vite + React!</p>
-        <p>
-          <button type="button" onClick={() => setCount((count) => count + 1)}>
-            count is: {count}
-          </button>
-        </p>
-        <p>
-          Edit <code>App.tsx</code> and save to test HMR updates.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-          {' | '}
-          <a
-            className="App-link"
-            href="https://vitejs.dev/guide/features.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Vite Docs
-          </a>
-        </p>
-      </header>
-    </div>
+    <div className={`flex fill container`}>
+    {transitions((style, i) => {
+      const Page = pages[i];
+      return (
+        <Page
+          style={style}
+          triggerTransition={onClick}
+          slotsCount={parkingSlotsCount}
+          setParkingSlotsCount={setParkingSlotsCount}
+        />
+      );
+    })}
+  </div>
   )
 }
 
